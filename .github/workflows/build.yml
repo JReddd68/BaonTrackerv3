@@ -7,7 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Unzip project
-        run: unzip -q BaonTrackAndroid.zip
+        run: |
+          unzip -o -q BaonTrackAndroid.zip -d _proj
+          echo "PROJ_DIR=$(dirname "$(find _proj -name settings.gradle | head -n1)")" >> "$GITHUB_ENV"
+          echo "Project folder: $(dirname "$(find _proj -name settings.gradle | head -n1)")"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -18,9 +21,9 @@ jobs:
         with:
           gradle-version: '8.7'
       - name: Build debug APK
-        working-directory: BaonTrackAndroid
+        working-directory: ${{ env.PROJ_DIR }}
         run: gradle assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: BaonTrack-debug-apk
-          path: BaonTrackAndroid/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJ_DIR }}/app/build/outputs/apk/debug/app-debug.apk
