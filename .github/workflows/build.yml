@@ -21,9 +21,25 @@ jobs:
       - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Bundle UI libraries for offline use
+        working-directory: ${{ env.PROJ_DIR }}
+        run: bash scripts/fetch-libs.sh
       - name: Build debug APK
         working-directory: ${{ env.PROJ_DIR }}
         run: gradle assembleDebug
+      - name: Check the libraries are inside the APK
+        working-directory: ${{ env.PROJ_DIR }}
+        run: |
+          unzip -l app/build/outputs/apk/debug/app-debug.apk > apk-contents.txt
+          for f in assets/vendor/tailwind.css assets/vendor/chart.umd.js \
+                   assets/vendor/fontawesome/css/all.min.css assets/vendor/fontawesome/webfonts/fa-solid-900.woff2 \
+                   assets/vendor/inter/inter.css assets/vendor/inter/inter-latin-wght-normal.woff2; do
+            grep -q "$f" apk-contents.txt || { echo "MISSING from APK: $f"; exit 1; }
+          done
+          echo "All offline libraries are packed in the APK."
       - uses: actions/upload-artifact@v4
         with:
           name: BaonTrack-debug-apk
